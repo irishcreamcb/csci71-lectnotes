@@ -1,0 +1,55 @@
+\chapter{Preliminaries}\label{ch:intro}
+The study of finite automata originally began with theoretical linguists in the mid 20th century trying to understand how language works. 
+They wanted to fully capture the process of language making through a series of formal rules and automatic methods---hence, creating machines that could mimic language ``perfectly''. 
+They failed, obviously, because language is constantly evolving and can't be tied down by a fixed set of rules. 
+However, a lot of their theory became useful in the study of \emph{formal languages} (e.g., programming languages), where the rules are fixed by design in order to avoid unwanted behaviour in machines. 
+This is why a lot of the terminology uses words like `alphabets' and `languages'. 
+In this section, we fix a few terms and review some set-theoretic concepts. 
+
+An \emph{alphabet} \(\Sigma\) is a finite, non-empty set of symbols. 
+A \emph{string} \(w = a_1 a_2 \cdots a_k\) of length \(k\) is a sequence of \(k\) symbols \(a_i \in \Sigma\). 
+We write \(|w| = k\) to indicate that the string has length \(k\). 
+We also define for convenience the empty word, \(\varepsilon\), which has length \(0\). 
+
+\exm{} For example, given the binary alphabet \(\Sigma = \{0,1\}\), \(001\) is a word of length \(3\).\endex{}
+
+We define \(\Sigma^k\) to be the set of all \(k\)-length words from the alphabet. 
+By convention, \(\Sigma^0 = \{ \varepsilon \}\). 
+
+\exm{} Taking the binary alphabet \(\Sigma = \{0, 1\}\) again, we have\[
+    \Sigma^k = \{ 000, 001, 010, 011, 100, 101, 110, 111 \},
+\]for example.\endex{}
+
+The \emph{Kleene closure} of an alphabet is defined as\[    
+\Sigma^* = \Sigma^0 \cup \Sigma^1 \cup \Sigma^2 \cup \cdots \]
+We also define \(\Sigma^+ = \Sigma^1 \cup \Sigma^2 \cup \cdots\). 
+Intuitively \(\Sigma^*\) is the set of all possible finite strings given characters from that alphabet, along with the empty string. 
+Note that \(\Sigma^*\) is always infinite. 
+
+\exm{} For example, the set \(\Sigma^*\) over the binary alphabet is the set of all allowable binary strings, plus the empty word:\[
+    \Sigma^* = \{\varepsilon, 0, 1, 00, 01, 10, 11, 000, 001, 010, 011, \ldots \}
+\]\endex{}
+
+\emph{Concatentation} of strings is defined in an obvious way: given two strings \(w_1\) and \(w_2\), concatenating them results in \(w_1 w_2\). 
+Concatenating any string with \(\varepsilon\) results in the same string. 
+Similarly, a word \(w_1\) is a \emph{prefix} of \(w\) if \(w = w_1 w_2\), and a \emph{suffix} of \(w\) if \(w = w_2 w_1\). We write\[
+w^k = \underbrace{ww\cdots w}_{k~\text{times}}
+\]and if \(w = a_1 a_2 \cdots a_k\) for \(a_i \in \Sigma\), then \(w^\mathrm{R} = a_k a_{k-1} \cdots a_1\) is the reverse of \(w\). 
+We also define \emph{substrings} in an obvious way. A string \(s\) is a substring of \(w\) if there exist (possibly empty) strings \(u, v\) such that \(w = usv\). 
+
+A \emph{language} \(\mathsf{L}\) over an alphabet \(\Sigma\) is any set of words over \(\Sigma\), i.e., a subset \(\mathsf{L} \subseteq \Sigma^*\). 
+Since languages are sets, we can define the usual set operations of union, intersection, complement, and set difference on them. 
+We also define some language-specific operations: the concatenation of two languages,\[
+\mathsf{L}_1 \mathsf{L}_2 = \{w_1 w_2 \mid w_1 \in \mathsf{L}_1~\text{and}~w_2 \in \mathsf{L}_2\},~\text{with}~\mathsf{L}_1^k = \underbrace{L_1 L_1 \cdots L_1}_{k~\text{times}}, 
+\]and \(L_1^0 = \{\varepsilon\}\) as usual; and the Kleene closure of a language, \[
+\lang^* = \lang^0 \cup \lang^1 \cup \lang^2 \cup \cdots
+\]
+
+\exm{} For a simple example, take the languages \(\lang_1 = \{00, 11\}\) and \(\lang_2 = \{01, 10\}\). We then have \[
+\lang_1 \lang_2 = \{0001, 0010, 1101, 1110\},~\lang_2 \lang_1 = \{0100, 0111, 1000, 1011\}.
+\]Notice that concatenation is not in general commutative. We also have\[
+\lang_1^* = \{\varepsilon, 00, 11, 0000, 0011, 1100, 1111, 000000, 000011, 001100, \ldots \}.\]\endex{}
+
+Beyond applications in programming language design, these languages are useful to us because we can represent the solutions of a certain problem with a certain language. 
+For instance, if a given problem is to determine whether or not a binary number is divisible by three, then an equivalent ``solution'' to that problem would be the set of all binary strings that are divisible by three, along with a process of determining whether or not an arbitrary string belongs to this language. 
+This process of determining whether or not a string is contained inside a language is called a \emph{decision problem}. 

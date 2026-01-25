@@ -1,0 +1,135 @@
+\documentclass{book} 
+\usepackage[a4paper,left=21mm,right=21mm,top=30mm,bottom=25mm]{geometry}
+
+% general helper packages
+\usepackage{amsmath,amsthm}
+\usepackage{cancel} 
+\usepackage{titlesec}
+\usepackage{enumerate} 
+\usepackage{fancyhdr}
+\usepackage{xfrac}
+\usepackage{accents}
+\usepackage{stackrel}
+\usepackage{nicematrix}
+\usepackage{booktabs}
+
+% pretty packages 
+\usepackage{graphicx} 
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{tikz} 
+\usetikzlibrary{automata, arrows.meta, positioning}
+
+% pseudocode 
+\usepackage[ruled, linesnumbered,vlined]{algorithm2e}
+\SetArgSty{}
+
+% fonts 
+\usepackage{classico} % sans serif font
+\usepackage{inconsolata} % typewriter font
+\usepackage{newpxtext} % text font
+\usepackage[euler-digits]{eulervm} % math font
+\usepackage[bb=stixtwo]{mathalpha} % bb alphabet
+
+% nicer math symbols for subset, union/intersection, etc.
+\DeclareFontFamily{U}{matha}{\hyphenchar\font45}
+\DeclareFontShape{U}{matha}{m}{n}{
+      <5> <6> <7> <8> <9> <10> gen * matha
+      <10.95> matha10 <12> <14.4> <17.28> <20.74> <24.88> matha12
+      }{}
+\DeclareSymbolFont{matha}{U}{matha}{m}{n}
+\DeclareFontSubstitution{U}{matha}{m}{n}
+
+\DeclareMathSymbol{\subseteq}{3}{matha}{"84}
+\DeclareMathSymbol{\subset}{3}{matha}{"80}
+\DeclareMathSymbol{\nsubset}{3}{matha}{"86}
+\DeclareMathSymbol{\in}{3}{matha}{"50}
+\DeclareMathSymbol{\nin}{3}{matha}{"52}
+\DeclareMathSymbol{\cup}{3}{matha}{"59}
+\DeclareMathSymbol{\cap}{3}{matha}{"58}
+\DeclareMathSymbol{\complement}{3}{matha}{"41}
+\DeclareMathSymbol{\to}{3}{matha}{"D1}
+\DeclareMathSymbol{\gets}{3}{matha}{"D0}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{setspace}
+\usepackage{mdframed}
+
+\title{math62.1 lec notes} 
+\author{emily} 
+\date{\today}
+
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[LE]{\nouppercase\leftmark}% LE -> Left part on Even pages
+\fancyhead[RO]{\nouppercase\rightmark}% RO -> Right part on Odd pages
+
+\RenewDocumentCommand{\labelitemi}{}{$\rightarrow$}
+\RenewDocumentCommand{\labelenumi}{}{\colorbox{Periwinkle!40}{\textbf{\arabic{enumi}}}}
+\RenewDocumentCommand{\labelenumii}{}{\transparent{0.5}\colorbox{CornflowerBlue!40}{\transparent{1.0}\textbf{\alph{enumii}}}}
+
+\NewDocumentEnvironment{solution}{}{%
+    \RenewDocumentCommand{\qedsymbol}{}{$\blacksquare$}
+    \begin{proof}[Solution]
+}{\end{proof}}
+
+\NewDocumentEnvironment{example}{}{
+    \RenewDocumentCommand{\qedsymbol}{}{$\blacksquare$}
+    \begin{proof}[Example]
+}{\end{proof}}
+
+\newcounter{theo}[section]
+
+
+\newenvironment{theorem}[1][]{%
+  \refstepcounter{theo}%
+  \ifstrempty{#1}%
+    {\mdfsetup{%
+      frametitle={%
+        \tikz[baseline=(current bounding box.east),outer sep=0pt]
+        \node[anchor=east,rectangle,fill=Periwinkle!40]
+        {\strut{}\textsf{Theorem~\thesection.\thetheo}};}}
+    }%
+    {\mdfsetup{%
+frametitle={%
+\tikz[baseline=(current bounding box.east),outer sep=0pt]
+\node[anchor=east,rectangle,fill=Periwinkle!40]
+{\strut\textsf{Theorem~\thesection.\thetheo:~#1}};}}%
+}%
+\mdfsetup{innertopmargin=2pt,linecolor=Periwinkle!40,%
+linewidth=2pt,topline=true,
+frametitleaboveskip=\dimexpr-\ht\strutbox\relax,}
+\begin{mdframed}[]\relax%
+}{\end{mdframed}}
+
+\titleformat{\chapter}[block]
+  {\normalfont\LARGE\bfseries}{\colorbox{Periwinkle!40}{\sffamily\thechapter}}{1em}{\LARGE\sffamily}
+\titlespacing*{\chapter}{0pt}{-19pt}{10pt}
+
+\titleformat{\section}{\bfseries}{\Large\sffamily\thechapter.\arabic{section}}{1em}{\Large\sffamily
+\RenewDocumentCommand{\labelenumi}{}{\colorbox{magenta!40}{\textbf{\arabic{enumi}}}}}
+
+\NewDocumentCommand{\exercises}{}{\vspace{10pt}\noindent\textbf{\large Exercises}}
+
+\NewDocumentCommand{\prop}{}{\noindent\refstepcounter{theo}\textbf{\textsf{Proposition~\thesection.\thetheo.}}}
+\NewDocumentCommand{\lemm}{}{\noindent\refstepcounter{theo}\textbf{\textsf{Lemma~\thesection.\thetheo.}}}
+\NewDocumentCommand{\cor}{}{\noindent\refstepcounter{theo}\textbf{\sffamily{}Corollary \thesection.\thetheo.}}
+\NewDocumentCommand{\exm}{}{\noindent\refstepcounter{theo}\textbf{\sffamily{}Example \thesection.\thetheo.}}
+\NewDocumentCommand{\rem}{}{\noindent\textbf{\sffamily{}Remark.}}
+
+\onehalfspacing\setlength{\parskip}{5pt}
+
+
+\NewDocumentCommand{\lang}{}{\mathsf{L}}
+\NewDocumentCommand{\machine}{}{\mathsf{M}}
+\NewDocumentCommand{\endex}{}{
+  \begingroup
+  \RenewDocumentCommand{\qedsymbol}{}{\(\bullet\)}
+  \qed\endgroup}
+
+\begin{document}
+
+\setcounter{chapter}{-1}
+\include{chap0}
+\include{chap1}
+
+\end{document}

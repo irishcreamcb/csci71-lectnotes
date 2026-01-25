@@ -1,0 +1,489 @@
+\chapter{Deterministic finite automata and regular languages}
+In this chapter, we will cover models of computation that all correspond to (spoilers!) one kind of language: that of the \emph{regular languages}. 
+This will be the weakest form of computation we will consider in this course, but a lot of the same ideas will be present throughout later chapters, so this is a good starting point to gain experience dealing with machines and languages in general. 
+For an overview, we begin by introducing the deterministic finite automata and the kind of languages they compute. 
+Then, we will attempt to prove that these languages are \emph{closed} under certain operations, which will lead us to two new kinds of automata: \emph{non}deterministic FAs and so-called \(\varepsilon\)-nondeterministic FAs. 
+We will show that these two models of computation, though seemingly more powerful than the DFAs, actually capture the same kinds of languages. 
+Finally, we will create languages that \emph{cannot} be captured by any DFA, using a powerful result known as the pumping lemma. 
+
+\section{DFAs}
+The first model of computation we will tackle is that of a \emph{deterministic finite automaton}, or \emph{DFA}. 
+DFAs consist of finitely many states which are either accepting or not, and we model computation as the DFA taking in \emph{input strings} and moving to a new state at each step of the computation depending on the currently read symbol and the current state the machine is in. 
+Certain states of the DFA will be marked as \emph{accepting} states, so that if the computation given an input string terminates in an accepting state, we say that the string is \emph{accepted} by the DFA. 
+The set of all strings accepted by the DFA is its language. 
+
+DFAs being \emph{deterministic} means that there is exactly one way to compute given an input string. 
+It also means that given a state and given a symbol, there will always be a next state to go to; in terms that we will learn later on, this means that the \emph{transition function} is complete over the set of inputs. 
+In general, we will only consider DFAs over the alphabet \(\Sigma = \{0, 1\}\). 
+
+\exm{} Let \(\lang_1 = \{ w\in\Sigma^* \mid 00~\text{is a substring of}~w\} \). Thus, \(\lang_1 = \{ 00, 001, 100, 000, 1000, 1001, \ldots \} \). 
+The DFA that accepts this language is given by:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {$q_0$};
+      \node[state]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(0\)} (q_1)
+                      edge [loop below]             node  {\(1\)} ()
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[below] {\(1\)} (q_0) 
+                (q_2) edge [loop below] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+In this diagram, we start the computation at the indicated starting state, and the accepting states are marked with a double outline and a different color. 
+Let's go through the process of accepting a string, \(1001\). 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70, fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+        % \draw[help lines] (-1,-1) grid (8,1);
+    
+      \node[state,initial,draw=Periwinkle!70, fill=Periwinkle!20]  (q_0)                      {$q_0$};
+      \node[state]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+      \node (word) at (7,-0.1)  {current: \(\underset{\Uparrow}{1}001\)};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(0\)} (q_1)
+                      edge [loop below,very thick,draw=Periwinkle]             node  {\(1\)} ()
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[below] {\(1\)} (q_0) 
+                (q_2) edge [loop below] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+We begin at state \(q_0\), reading the symbol \(1\). 
+The arrow coming out of the state labelled with a \(1\) instructs us to stay in state \(q_0\) when reading that symbol, so we ``consume'' that symbol and move to the next. 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},]
+    
+      \node[state,initial, draw=Periwinkle!70,fill=Periwinkle!20]  (q_0)                      {$q_0$};
+      \node[state]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+      \node (word) at (7,-0.1)  {current: \(\textcolor{black!30}{1}\underset{\Uparrow}{0}01\)};
+    
+      \path[->] (q_0) edge [bend left,very thick,draw=Periwinkle]             node[above]  {\(0\)} (q_1)
+                      edge [loop below]             node  {\(1\)} ()
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[below] {\(1\)} (q_0) 
+                (q_2) edge [loop below] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+Now we are in state \(q_0\), reading the symbol \(0\). 
+The arrow coming out of the state labelled with a \(0\) instructs us to move to state \(q_1\), so again we consume the \(0\) and move on. 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20, very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {$q_0$};
+      \node[state, draw=Periwinkle!70, fill=Periwinkle!20]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+      \node (word) at (7,-0.1)  {current: \(\textcolor{black!30}{10}\underset{\Uparrow}{0}1\)};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(0\)} (q_1)
+                      edge [loop below]             node  {\(1\)} ()
+                (q_1) edge [very thick,draw=Periwinkle] node[above]           {\(0\)} (q_2)
+                edge [bend left] node[below] {\(1\)} (q_0) 
+                (q_2) edge [loop below] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+Now we are in state \(q_1\), reading the symbol \(0\). 
+The arrows instruct us to move to state \(q_2\) and consume the \(0\). 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20, very thick}, 
+        accepting/.style={draw=purple!50,fill=purple!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {$q_0$};
+      \node[state]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+      \node (word) at (7,-0.1)  {current: \(\textcolor{black!30}{100}\underset{\Uparrow}{1}\)};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(0\)} (q_1)
+                      edge [loop below]             node  {\(1\)} ()
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[below] {\(1\)} (q_0) 
+                (q_2) edge [loop below,very thick, draw=purple] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+Now, we have just a \(1\) left, and the arrows instruct us to stay in place once again. 
+This leaves us with no more symbols to read, which means that the computation has ended. 
+As we can also see, the computation finished in an accepting state, so the string will be accepted. 
+If we repeat the procedure for a string without any \(00\) contained in it, like \(1101\), we will see that the computation never reaches beyond state \(q_1\). 
+Try it out!\endex{}
+
+Keeping this example in mind, we can now give the formal definition of a DFA: a deterministic finite automaton \(\machine\) consists of the following data:\begin{enumerate}
+    \item a finite set \(Q = \{q_0, q_1, \ldots, q_n \} \) of \emph{states}; 
+    \item an alphabet of allowed symbols \(\Sigma\); 
+    \item a \emph{transition function} \(\delta : Q \times \Sigma \to Q\), which takes in as input a state and a symbol from the alphabet, and returns a (possibly different) state; 
+    \item an \emph{initial} or \emph{starting state} \(q_0\); and 
+    \item a subset \(F\subseteq Q\) of states known as \emph{final} or \emph{accepting states}. 
+\end{enumerate}
+We may represent this data by writing \(\machine = \langle Q, \Sigma, \delta, q_0, F \rangle\) when we specify a certain DFA. 
+
+\exm{} With the same DFA as the last example, we can see that \(Q = \{q_0, q_1, q_2\}\), \(\Sigma = \{0, 1\}\), the transition function \(\delta\) is given by the diagram, \(q_0\) is the initial state, and \(F = \{q_2 \}\). 
+We may also specify a transition function by a complete table of possible inputs and outputs. 
+If we also highlight the starting states and accepting states, then the table conveys the exact same information as the diagram above:\begin{center}
+    \begin{tabular}{c|cc}
+        \toprule
+        state & \(0\) & \(1\) \\ 
+        \midrule
+        \(\to q_0\) & \(q_1\) & \(q_0\) \\ 
+        \(q_1\) & \(q_2 \) & \(q_0\) \\ 
+        \(q_2 \to\) & \(q_2\) & \(q_2\) \\
+        \bottomrule
+    \end{tabular}
+\end{center}
+Here, we signified the starting states by an arrow coming in, and the final states by an arrow coming out.
+In general, we may use either representation, depending on which is more convenient---though admittedly, I prefer using the diagrams because they're prettier! \endex{}
+
+\vspace{10pt}
+\begin{minipage}{.14\textwidth}
+    \includegraphics[width=2cm]{nerd_maddy.png} 
+\end{minipage}%
+\fcolorbox{Periwinkle}{white!100}{
+\begin{minipage}{.76\textwidth}
+    \textbf{Nerd Interjection!} It's good practice to give meaning to our states, i.e., try to figure out what being in a certain state means. 
+    In the previous DFA, we move to \(q_1\) upon reading a \(0\), but we are only sure that there are two consecutive \(0\)'s if we read another \(0\) while in \(q_1\). 
+    If we read a \(1\) instead, we go back to \(q_0\). 
+    Thus, \(q_1\) is a state of ``expecting'' another \(0\). 
+    Of course, this machine is not really expecting anything, being incapable of thought. 
+\end{minipage}}
+\vspace{10pt}
+
+\exm{} Consider the language \(\lang_1 = \{ w \in \Sigma^* \mid 00~\text{is a suffix of}~w \}\). 
+A DFA for this language is:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {$q_0$};
+      \node[state]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(0\)} (q_1)
+                      edge [loop below]             node  {\(1\)} ()
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[above] {\(1\)} (q_0) 
+                (q_2) edge [loop below] node               {\(0\)} ()
+                (q_2) edge [bend left] node[below] {\(1\)} (q_0);
+    \end{tikzpicture}
+\end{center}We can see that this is quite similar to the previous DFA, except we go back to \(q_0\) when we read a \(1\) in \(q_2\). 
+Compare that also to the DFA for a seemingly similar language:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {\(q_0\)};
+      \node[state]          (q_1) [right=of q_0] {\(q_1\)};
+      \node[state, accepting]          (q_2) [right=of q_1] {\(q_2\)};
+      \node[state] (q_3) at (1, -1.5) {\(q_3\)};
+    
+      \path[->] (q_0) edge          node[above]  {\(0\)} (q_1)
+                      edge [bend right]             node[left]  {\(1\)} (q_3)
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[right] {\(1\)} (q_3) 
+                (q_2) edge [loop below] node               {\(0,1\)} ()
+                (q_3) edge [loop below] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+This is a DFA for \(\lang_2 = \{w \in \Sigma^* \mid 00~\text{is a prefix of}~w \}\). 
+Obviously, if a string starts with a \(1\), or a \(01\), then it is discarded regardless of what comes after. 
+This is represented in the DFA by moving to state \(q_3\) whenever either of these prefixes are read. 
+As we can see, once the DFA goes to \(q_3\), there is no way out---this is why such states are often called \emph{trap states}.\endex{}
+
+\exm{} Let's transform the second DFA from the previous example into its table representation. 
+We begin at the starting state, \(q_0\). 
+From here, given a \(0\), we move to \(q_1\), and given a \(1\) we move to \(q_3\). 
+We represent this by a row of information\begin{center}
+    \begin{tabular}{c|cc}
+        \toprule 
+        state & \(0\) & \(1\) \\ 
+        \midrule 
+        \(\to q_0\) & \(q_1\) & \(q_3\)
+    \end{tabular}
+\end{center}
+Then, in \(q_1\), we move to \(q_2\) given a \(0\) and to \(q_3\) given a \(1\). 
+We add this row to our table:
+\begin{center}
+    \begin{tabular}{c|cc}
+        \toprule 
+        state & \(0\) & \(1\) \\ 
+        \midrule 
+        \(\to q_0\) & \(q_1\) & \(q_3\) \\ 
+        \(q_1\) & \(q_2 \) & \(q_3\)
+    \end{tabular}
+\end{center}
+We carry on doing this until all states are given rows, leaving us with\begin{center}
+    \begin{tabular}{c|cc}
+        \toprule 
+        state & \(0\) & \(1\) \\ 
+        \midrule 
+        \(\to q_0\) & \(q_1\) & \(q_3\) \\ 
+        \(q_1\) & \(q_2 \) & \(q_3\) \\ 
+        \(q_2\to\) & \(q_2\) & \(q_2\) \\ 
+        \(q_3\) & \(q_3\) & \(q_3\) \\ 
+        \bottomrule
+    \end{tabular}
+\end{center}
+Make sure you convince yourself that this process is reversible. 
+Try going from this table back to the DFA.\endex{}
+
+We can now more formally state the reason DFAs are called ``deterministic''. 
+Imagine a DFA like this one:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {\(q_0\)};
+      \node[state, accepting]          (q_1) [right=of q_0] {\(q_1\)};
+    
+      \path[->] (q_0) edge [bend left]          node[above]  {\(0\)} (q_1)
+                      edge [bend right]             node[below]  {\(1\)} (q_1)
+                      edge [loop above] node {\(1\)} ()
+                      (q_1) edge [loop above] node {\(0,1\)} (); 
+    \end{tikzpicture}
+\end{center}
+From state \(q_0\), if we read a \(1\), we can \emph{either} go to \(q_1\) or loop back and stay in \(q_0\). 
+Thus, if we take the string \(110\) for example, we have two possible sequences of states we could go through:\[
+    q_0 \overset{1}{\to} q_0 \overset{1}{\to} q_1 \overset{0}{\to} q_1 ~\text{or}~q_0 \overset{1}{\to} q_1 \overset{1}{\to} q_1 \overset{0}{\to} q_1. 
+\]
+There is a choice to be made!
+Compare this to all our previous examples, wherein there was exactly one arrow per symbol coming out of each state. 
+This property ensures that given an arbitrary input string, there is exactly one way of proceeding through the DFA. 
+As it turns out, allowing for multiple transitions per symbol is convenient enough for readability to warrant an entirely new model of computation, that of the \emph{non}deterministic FAs. 
+We will take a closer look at these in Section~\ref{sec:nondet}. 
+
+\exm{} All our examples so far have only had one accepting state, but since \(F \subseteq Q\) in general, there may be more than one. 
+Take the language \(\lang = \{ w\in\Sigma^* \mid w = 0^m 1^n, m,n\geq 0\}\). 
+Recall that in our notation, \(0^m\) means \(m\) \(0\)'s concatenated together. 
+The DFA for this language is\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial,accepting]  (q_0)                      {\(q_0\)};
+      \node[state, accepting]          (q_1) [right=of q_0] {\(q_1\)};
+      \node[state]          (q_2) [right=of q_1] {\(q_2\)};
+    
+      \path[->] (q_0) edge        node[above]  {\(1\)} (q_1)
+                      edge [loop above] node {\(0\)} ()
+                      (q_1) edge [loop above] node {\(1\)} ()
+                      edge node[above] {\(0\)} (q_2)
+                      (q_2) edge [loop right] node {\(0,1\)} (); 
+    \end{tikzpicture}
+\end{center}In this example, we have \(F = \{q_0, q_1\}\).\endex{}
+
+The next logical step would be to formalize what it means for a DFA to \emph{accept} a string \(w\). 
+We will say that a DFA \(\machine\) accepts \(w = a_1 a_2 \cdots a_n\) iff there exists a sequence of states\[q_{(0)} \overset{a_1}{\to} q_{(1)} \overset{a_2}{\to} \cdots \overset{a_n}{\to} q_{(n)}\]so that the first state in the sequence \(q_{(0)} = q_0\) is initial and the last state \(q_{(n)} \in F\) is accepting, and for each \(a_i\),\[
+    \delta(q_{(i-1)}, a_i) = q_{(i)}. 
+\]This definition looks intimidating, but all it is saying is that each state in the sequence of states follows the previous one based on the transition function. 
+
+\exm{} Let's look back at our very first example.\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {$q_0$};
+      \node[state]          (q_1) [right=of q_0] {$q_1$};
+      \node[state, accepting]          (q_2) [right=of q_1] {$q_2$};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(0\)} (q_1)
+                      edge [loop below]             node  {\(1\)} ()
+                (q_1) edge node[above]           {\(0\)} (q_2)
+                edge [bend left] node[below] {\(1\)} (q_0) 
+                (q_2) edge [loop below] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+Earlier, we went through a step-by-step procedure of accepting the string \(1001\). 
+We moved in the sequence\[
+q_0 \overset{1}{\to} q_0 \overset{0}{\to} q_1 \overset{0}{\to}  q_2 \overset{1}{\to} q_2.
+\]In this case, we do have that the first state in the sequence \(q_{(0)} = q_0\) is initial, and the last state in the sequence \(q_{(5)} = q_2 \in F\) is final. 
+We also know from our diagram that at each state in this sequence, the transition (indicated here by the symbol above each arrow) is valid, i.e., that \(\delta(q_{(i-1)}, a_i) = q_{(i)}\). 
+For instance, note that \(a_2 = 0\) and \(q_{(1)} = q_0\), and we know that \(\delta(q_0, 0) = q_1\), which is precisely \(q_{(2)}\) in the sequence.\endex{} 
+
+\vspace{10pt}
+\begin{minipage}{.14\textwidth}
+    \includegraphics[width=2cm]{nerd_maddy.png} 
+\end{minipage}%
+\fcolorbox{Periwinkle}{white!100}{
+\begin{minipage}{.76\textwidth}
+    \textbf{Nerd Interjection!} The distinction between \(q_{(i)}\) for the \(i^\text{th}\) state in a \emph{sequence} of states and \(q_i\) for the \(i^\text{th}\) state in a \emph{DFA} is quite unfortunate notation for legibility, but its faily standard. 
+    In any case, there's not really any rule dictating that we need to use \(q_i\) for states, so feel free to use \(a, b, c, \ldots\) instead. 
+    Just make sure the symbols you use aren't part of the alphabet, otherwise it can get \textit{really} confusing! 
+\end{minipage}}
+\vspace{10pt}
+
+All of that is just a math-y way of saying what us computer scientists understand fairly well as a condition known as ``this algorithm terminates with this outcome''. 
+So, if you'd like, you can instead view the outcome of a DFA processing a string as the outcome of this algorithm:\begin{center}\begin{minipage}{0.6\textwidth}
+    \begin{algorithm}[H]
+        \label{alg:1.1.1}
+        % \SetArgSty{}
+        \caption{The process of accepting or rejecting a string}
+        \KwIn{a string \(w = a_1 a_2 \cdots a_n\) and a DFA \(\machine\)}
+        \KwOut{either \textsc{accept} or \textsc{reject}} 
+        \(q_\text{curr} \gets q_0\)\; 
+        \For{\(a_i\) \textbf{in} \(w\)}{
+            \(q_\text{curr} \gets \delta (q_\text{curr}, a_i)\)\; 
+        }
+        \If{\(q_\text{curr} \in F\)}{
+            \Return{\textsc{accept}}\;
+        }\Return{\textsc{reject}}\;
+    \end{algorithm}
+\end{minipage}
+\end{center}
+
+Indeed, this algorithm terminating with \textsc{accept} is equivalent to the definition we gave earlier of there being an accepting sequence of states, so we can generally adopt either of them as our definition for ``DFA \(\machine\) accepts the string \(w\)''. 
+We can even give a \emph{third} formulation using recursion. 
+We construct a new function \(\hat\delta: Q \times \Sigma^* \to Q\), which, instead of operating over single symbols, takes in as input entire strings. The function is defined as follows:\begin{enumerate}
+    \item if \(w = a\) for some \(a\in \Sigma\), then \(\hat\delta (q_i, a) = \delta (q_i, a)\); and 
+    \item if \(w = a_1 a_2 \cdots a_k\) for some \(a_i \in \Sigma\), then \(\hat\delta(q_i, w) = \delta\big(\hat\delta (q_i, a_1 a_2 \cdots a_{k-1}), a_k\big)\). 
+\end{enumerate}
+Intuitively, all \(\hat\delta\) does is recursively backtrack until it hits the first symbol, and then iterates through every symbol after that---just like Algorithm~\ref{alg:1.1.1}. 
+Then, we can say that a DFA accepts a string \(w\) iff \(\hat\delta (q_0, w) \in F\) is an accepting state. 
+This definition too is equivalent to our previous ones, and its generally the one we will adopt, if only for notational convenience. 
+
+Now that we've clarified what it means for a DFA to accept a string, we can define \(\lang(\machine)\) to be the set of all strings accepted by a certain DFA \(\machine\), also known as its language. 
+We will say that \(\machine\) \emph{recognizes} \(\lang\) whenever \(\lang = \lang(\machine)\).
+We've mostly been providing languages and trying to find DFAs for them, but let's see how we might go the other way around. 
+
+\exm{} Let \(\machine\) be the following DFA:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {$q_0$};
+      \node[state,accepting]          (q_1) [right=of q_0] {$q_1$};
+    
+      \path[->] (q_0) edge [bend left]             node[above]  {\(1\)} (q_1)
+                      edge [loop below]             node  {\(0\)} ()
+                (q_1) edge[bend left] node[below]           {\(1\)} (q_0)
+                edge [loop below] node {\(0\)} ();
+    \end{tikzpicture}
+\end{center}
+Let's try and figure out what language this DFA recognizes. 
+We can see that reading a \(0\) makes the computation stay in place, so we can safely assume that the language does not distinguish anything about \(0\)'s, but it switches from accept to non-accept every time it reads a \(1\). 
+It rejects \(\varepsilon\), accepts \(1\), rejects \(11\), accepts \(111\), rejects \(1111\), and so on---it seems to be alternating depending on how many \(1\)'s there are in the string. 
+Thus, \(\lang(\machine) = \{w \in \Sigma^*\mid w~\text{has an odd number of}~1\text{'s}\}\).\endex{}
+
+You might be wondering if there's a way to classify what sorts of languages can be recognized by a DFA without directly referring to a DFA. 
+We'll look at this question more in depth in Section~\ref{sec:regex}, but for now let's have the following definition: call a language over an alphabet \(\Sigma\) \emph{regular} iff there exists some DFA that recognizes that language. 
+
+\exm{} Here's another language that a DFA can recognize. 
+Let \(\Sigma = \{0, 1, 2, 3, 4, 5, 6, 7, 8, 9\}\) be the set of digits in base 10. 
+Thus, strings in \(\Sigma^*\) are just decimal numbers (with some weirdo ones like \(000\) or \(001\), but we can just ignore leading \(0\)'s). 
+We'll show that the language \(\lang = \{w \in \Sigma^* \mid w~\text{is divisible by}~3\}\) is a regular language, by giving this DFA:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=3cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial,accepting]  (q_0)                      {\(q_0\)};
+      \node[state]        (q_1) at (4,2) {\(q_1\)};
+      \node[state]          (q_2) at (4,-2) {\(q_2\)};
+    
+      \path[->] (q_0) edge [bend left]        node[above left]  {\(1,4,7\)} (q_1)
+                      edge [loop above] node {\(0,3,6,9\)} ()
+                      edge  node[above right] {\(2,5,8\)} (q_2)
+                      (q_1) edge [loop above] node {\(0,3,6,9\)} ()
+                      edge[bend left] node[right] {\(1,4,7\)} (q_2)
+                      edge node[below right] {\(2,5,8\)} (q_0)
+                      (q_2) edge [loop below] node {\(0,3,6,9\)} ()
+                      edge node[left] {\(2,5,8\)} (q_1)
+                      edge[bend left] node[below left] {\(1,4,7\)} (q_0); 
+    \end{tikzpicture}
+\end{center}
+Recall that to tell if a number is divisible by \(3\), we simply add up the digits and check if \textit{that} is divisble by \(3\). 
+What this machine is doing is keeping track of the remainder \(\bmod ~3\) of the ``running total'' of the digits!
+Say our number is \(3147\). 
+The DFA reads a \(3\), so the running total is \(3\), which is divisible by \(3\), so we stay in state \(q_0\). 
+Next, we read a \(1\), which makes our running total \(4\). 
+\(4\bmod 3\) is \(1\), so we go to state \(q_1\). 
+Next, we read a \(4\), which makes our running total \(8\).
+\(8\bmod 3\) is \(2\), so we go to state \(q_2\). 
+Finally, we read a \(7\), putting our final sum of digits at \(15\)---which is divisible by \(3\)!
+This is reflected in the fact that the DFA sends us to state \(q_0\) again, the only accepting state, so we accept \(3147\).\endex{}
+
+Via the correspondence we established in Chapter~\ref{ch:intro} between decision problems and languages, we can say that DFAs can solve the problem of deciding whether or not a number in base \(10\) is divisible by \(3\). 
+Quite impressive! 
+With just a few states and a few instructions, we can tell this machine to completely solve this problem.
+Of course, this is quite an easy problem. 
+How about a problem that a DFA \textit{can't} solve? 
+
+\section{Closure properties}
+Languages, being sets, can be operated on using established set operations. 
+
+\exm{} Consider the languages \(\lang_1 = \{w \in \Sigma^* \mid 00~\text{is a suffix of}~w\} \) and \(\lang_2 = \{w\in\Sigma^* \mid w~\text{starts with}~1 \}\). 
+These are both regular. 
+Their intersection \(\lang_1 \cap \lang_2\) would be the set of all strings who start with \(1\) and end in \(00\). 
+The first few elements can be listed:\[
+\lang_1 \cap \lang_2 = \{ 100, 1000, 1100, 10000, 10100, 11000, 111000, \ldots \}. 
+\] \endex{}
+
+A natural question arises: is the result of applying an operation to one or two regular languages still a regular language? 
+Mathematically, when a type of object satisfies this property, we say that the objects are \emph{closed} under the operation. 
+The prototypical example is the natural numbers, which are closed under addition (\(2 + 3 = 5\) and so on) but not closed under subtraction (\(2 - 3 = -1\), not a natural number). 
+
+The answer, as we will see later, is yes, in the cases of regular set operations. 
+Before we prove these statements in the general case, though, let's think of what we would do given a particular DFA for the case of a set complement. 
+Recall that \(\lang^\complement\) is the set of all strings over the same alphabet \(\Sigma\) as \(\lang\) but are not themselves members of \(\lang\). 
+Since we established that a language is regular whenever a DFA recognizes it, if we want to show that \(\lang^\complement\) is also regular, we need to construct a DFA for it, and we need to do so only given the data of the DFA for \(\lang\). 
+This turns out to be fairly straightforward. 
+
+\exm{} Consider the DFA \(\machine\):\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial]  (q_0)                      {\(q_0\)};
+      \node[state,accepting]          (q_1) [right=of q_0] {\(q_1\)};
+      \node[state]       (q_2) [right=of q_1] {\(q_2\)};
+    
+      \path[->] (q_0) edge          node[above]  {\(0\)} (q_1)
+                      edge [bend right]             node[below]  {\(1\)} (q_2)
+                (q_1) edge [loop above] node           {\(0,1\)} ()
+                (q_2) edge [loop right] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+Note that \(\lang(\machine)\) is all strings that start with \(0\). 
+If we want to accept those strings that \(\machine\) rejects, then we can simply modify \(\machine\) to accept on every non-accepting state, and reject on every accepting state. 
+This process yields the new DFA \(\machine'\):\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state,initial,accepting]  (q_0)                      {\(q_0\)};
+      \node[state]          (q_1) [right=of q_0] {\(q_1\)};
+      \node[state,accepting]       (q_2) [right=of q_1] {\(q_2\)};
+    
+      \path[->] (q_0) edge          node[above]  {\(0\)} (q_1)
+                      edge [bend right]             node[below]  {\(1\)} (q_2)
+                (q_1) edge [loop above] node           {\(0,1\)} ()
+                (q_2) edge [loop right] node               {\(0,1\)} ();
+    \end{tikzpicture}
+\end{center}
+It is then clear that \(\lang(\machine')\) is all strings that start with \(1\), plus the empty string, which is precisely \({\lang(\machine)}^\complement\).\endex{}
+
+Let's reflect on what we just did. 
+In order to obtain a machine for the complement of a language given a machine for that language, we simply retained all of the original states, the alphabet, the initial state, and the transition function, then flipped all accepting states into non-accepting states and vice-versa. 
+It's not hard to see that this argument works out no matter what the ``underlying'' DFA is: if in the original DFA \(\machine\), computation terminates in an accepting state, then in the new \(\machine'\), computation would terminate in a non-accepting state. 
+We formalize this with the following theorem. 
+
+\begin{theorem}[Closure under complements]
+    The complement \(\lang^\complement \) of a regular language \(\lang\) is itself a regular language. 
+\end{theorem}
+
+\begin{proof}
+    Let \(\lang\) be a regular language, and \(\machine = \langle Q, \Sigma, \delta, q_0 , F\rangle\) be its corresponding DFA. 
+    Then, we can construct a new DFA \(\machine'\) for \(\lang^\complement\) by taking\[
+    \machine' = \langle Q, \Sigma, \delta, q_0, Q - F \rangle
+    \]where \(Q - F\) is the set of all non-accepting states in \(\machine\). 
+    Then, \(\lang^\complement = \lang(\machine')\), for if the result of \(\hat\delta(q_0, w) = q_n\in F\) is an accepting state in \(\machine\), then this state \(q_n\) will not be in \(Q -F\), so \(\machine'\) will not accept \(w\).
+\end{proof}
+
+\section{Nondeterminism}\label{sec:nondet}
+
+\section{Regular expressions}\label{sec:regex}

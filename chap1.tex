@@ -486,4 +486,394 @@ We formalize this with the following theorem.
 
 \section{Nondeterminism}\label{sec:nondet}
 
+As we can see at the end of the last section, it's going to be quite difficult to prove that the regular languages are closed under string operations just by using DFAs. 
+If we could allow for transitions \textit{without} reading any character, then both these problems are very easily solved: given languages \(\lang_1\) and \(\lang_2\), and corresponding DFAs \(\machine_1\) and \(\machine_2\), we can construct a machine for \(\lang_1 \lang_2\) by adding these \(\varepsilon\)-transitions from every final state of \(\machine_1\) to the starting state of \(\machine_2\). 
+
+This introduces new problems, however: now, there is no unique way of computing a certain string. 
+It's easy to see why, as in the following example.
+
+\exm{} Consider the two languages \(\lang_1 = \{ w \in \Sigma^* \mid w~\text{contains at least two}~0\text{'s} \}\) and \(\lang_2 = \{ w \in \Sigma^* \mid w~\text{starts and ends with the same symbol} \} \). 
+Construct a new machine using \(\machine_1\) and \(\machine_2\) using the process outlined above, giving us something like:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+    
+      \node[state]  (q_f1)                      {\(q_{f}\)};
+      \node[state]          (q_i2) [right=of q_f1] {\(q_{s}\)};
+      \node (m2) [right=of q_i2] {}; 
+      \node (m1) [left=of q_f1] {}; 
+      \node[draw=Periwinkle,dashed,fit=(q_f1) (m1), inner sep=0.25cm] (machine1) {}; 
+      \node[draw=Periwinkle,dashed,fit=(q_i2) (m2), inner sep=0.25cm] (machine2) {}; 
+      \node[above right] at (machine1.south west) {\(\machine_1\)};
+      \node[above left] at (machine2.south east) {\(\machine_2\)};
+    
+      \path[->] (q_f1) edge          node[above]  {\(\varepsilon\)} (q_i2);
+      \path[dotted,->] (m1) edge (q_f1);
+      \path[dotted,->] (q_i2) edge (m2); 
+    \end{tikzpicture}
+\end{center}
+Then, given a string like \(00100\), we can parse it in \textit{at least} two different ways: either as \(001\) concatenated with \(00\)---which is a member of \(\lang_1 \lang_2\)---or as \(00\) concatenated with \(100\)---which isn't a member of \(\lang_1 \lang_2\). 
+We will be at the final state of \(\machine_1\) by the time we finish reading \(00\), and we can choose to transition to \(\machine_2\) either after reading a \(1\) or before reading the \(1\). Visually,\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=purple!50,fill=purple!20, very thick,double}]
+    
+      \node[state,draw=Periwinkle!70,fill=Periwinkle!20]  (q_f1)                      {\(q_{f}\)};
+      \node[state]          (q_i2) [right=of q_f1] {\(q_{s}\)};
+      \node (m2) [right=of q_i2] {}; 
+      \node (m1) [left=of q_f1] {}; 
+      \node[draw=Periwinkle,dashed,fit=(q_f1) (m1), inner sep=0.25cm] (machine1) {}; 
+      \node[draw=Periwinkle,dashed,fit=(q_i2) (m2), inner sep=0.25cm] (machine2) {}; 
+      \node[above right] at (machine1.south west) {\(\machine_1\)};
+      \node[above left] at (machine2.south east) {\(\machine_2\)};
+      \node (word) at (7,-0.1)  {current: \(\textcolor{black!30}{001}\underset{\Uparrow}{\varepsilon}\,00\)};
+    
+      \path[->] (q_f1) edge[very thick, draw=Periwinkle]          node[above]  {\(\varepsilon\)} (q_i2);
+      \path[dotted,->] (m1) edge (q_f1);
+      \path[dotted,->] (q_i2) edge (m2); 
+    \end{tikzpicture}
+
+    versus
+
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=purple!50,fill=purple!20, very thick,double}]
+    
+      \node[state,draw=Periwinkle!70,fill=Periwinkle!20]  (q_f1)                      {\(q_{f}\)};
+      \node[state]          (q_i2) [right=of q_f1] {\(q_{s}\)};
+      \node (m2) [right=of q_i2] {}; 
+      \node (m1) [left=of q_f1] {}; 
+      \node[draw=Periwinkle,dashed,fit=(q_f1) (m1), inner sep=0.25cm] (machine1) {}; 
+      \node[draw=Periwinkle,dashed,fit=(q_i2) (m2), inner sep=0.25cm] (machine2) {}; 
+      \node[above right] at (machine1.south west) {\(\machine_1\)};
+      \node[above left] at (machine2.south east) {\(\machine_2\)};
+      \node (word) at (7,-0.1)  {current: \(\textcolor{black!30}{00}\,\underset{\Uparrow}{\varepsilon}100\)};
+    
+      \path[->] (q_f1) edge[very thick, draw=Periwinkle]          node[above]  {\(\varepsilon\)} (q_i2);
+      \path[dotted,->] (m1) edge (q_f1);
+      \path[dotted,->] (q_i2) edge (m2); 
+    \end{tikzpicture}
+\end{center}
+This is because \(\machine_1\) will accept both \(00\) and \(001\)---and, in fact, \(0010\) and \(00100\) as well! 
+We can't know for sure when we should take the epsilon transition to lead to an accepting computation, but we know that it \textit{should} be accepted. 
+The choice here is important, as it makes all the difference between an accepting computation and a non-accepting one!\endex{} 
+
+This means that the introduction of \(\varepsilon\)-transitions causes our machines to be \textit{nondeterministic}, which calls for a general defintion of a \emph{nondeterministic finite automaton}, or an \emph{NFA}. 
+
+\vspace{10pt}
+\begin{minipage}{.14\textwidth}
+    \includegraphics[width=2cm]{nerd_maddy.png} 
+\end{minipage}%
+\fcolorbox{Periwinkle}{white!100}{
+\begin{minipage}{.76\textwidth}
+    \textbf{Nerd Interjection!} As it turns out, NFAs without \(\varepsilon\)-transitions are significantly different enough from those \textit{with} \(\varepsilon\)-transitions that we will treat them as separate kinds of machines, distinguishing between general NFAs and \(\varepsilon\)-NFAs respectively. 
+    The introduction of \(\varepsilon\)-transitions complicates the conversion process from NFAs to DFAs (spoilers!) that we will look at later. 
+\end{minipage}}
+\vspace{10pt}
+
+An NFA \(\machine\) consists of the following data:\begin{enumerate}
+    \item a finite set of states \(Q\); 
+    \item an alphabet of allowed symbols \(\Sigma\); 
+    \item a transition function \(\delta : Q \times \Sigma \to \mathcal{P}(Q)\) to the \emph{powerset} of \(Q\); 
+    \item an initial state \(q_0\); and 
+    \item a subset \(F\subseteq Q\) of final states. 
+\end{enumerate}
+The main difference (in fact, the only difference) between the description of a DFA to an NFA is the transition function: instead of only returning one state for every state-symbol pair, we return a \textit{set} of states. 
+This, in particular, means that we can also return nothing---given a state and a symbol, there may be no other way to move to a different state. 
+This written as \(\delta(q, a) = \{\}\), the empty set. 
+If we want to transform the definition into one for an \(\varepsilon\)-NFA, then we simply add \(\varepsilon\) to the alphabet \(\Sigma\). 
+
+Convince yourself that the transition function taking values in the powerset of \(Q\) instead of elements of \(Q\) precisely captures the notion of nondeterminism. 
+For, say that given a state-symbol pair, \(\delta (q, a) = \{q_1, q_3, q_4 \}\). 
+Which one of the three states in the set would we transition to next? 
+There is a choice to be made here, which complicates our computation---but greatly simplifies the presentation of NFAs. 
+
+\exm{} Consider the language \(\lang = \{ 1 0^m 1 \mid m \ge 0 \}\). 
+This is an NFA for this language:\begin{center}\begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+    every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+    accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+
+    \node[state, initial] (q_0) {\(q_0\)}; 
+    \node[state] (q_1) [right=of q_0] {\(q_1\)}; 
+    \node[state, accepting] (q_2) [right=of q_1] {\(q_2\)}; 
+
+    \path[->] (q_0) edge node[above] {\(1\)} (q_1)
+                    (q_1) edge[loop above] node[above] {\(0\)} ()
+                    edge node[above] {\(1\)} (q_2); 
+\end{tikzpicture}
+\end{center}This NFA shows clearly what language its computing---a \(1\), followed by any number of \(0\)'s, and ended with a \(1\). 
+If it were a DFA, think of how many more transitions we'd have, as well as at least one more state for trapping the unwanted strings.
+
+In general, if we terminate computation of a string in an NFA with nowhere else to go, but with symbols still left to be read, we consider that a reject. 
+So, for instance, \(1011\) will be rejected by this NFA because the computation will terminate in \(q_2\) with a \(1\) leftover.\endex%
+
+We've established that because of nondeterminism, we lose the uniqueness of a computation sequence given a certain string; since transitions can go to multiple states, there likewise might exist multiple ways of processing the same string. 
+Visually, we can imagine that while computation in a DFA is a straight line:
+\begin{center}
+    \tikz[>={Stealth[round]}]\graph[math nodes]{
+        q_0 -> q_1 ->[dashed] q_i ->[dashed] q_n
+      };
+\end{center}computation in an NFA is a \textit{tree}, with many branching paths:
+\begin{center}
+    \tikz[>={Stealth[round]}]\graph[math nodes]{
+        q_0 -> {
+            q_1 ->[dashed] q_i, 
+            q_2 ->[dashed] {q_j, q_k ->[dashed] q_n} }
+      };
+\end{center}
+This is due to the fact that there can be multiple transitions from each state per character, and not all of these may lead to an accepting computation. 
+If any \textit{one} of these paths terminates in an accepting state, and with the whole string consumed, then we will say that the NFA accepts that string. 
+This intuitive notion is enough to grasp the formal definition of what it means for an NFA to accept a certain string (like the one we set out for DFAs), so we won't go over it in too much detail here. 
+
+\exm{} Consider the language \(\lang = \{w \in \Sigma^* \mid 01~\text{is a suffix of}~w\}\). An NFA for this is:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=purple!50,fill=purple!20, very thick,double}]
+        
+        \node[state, initial] (q_0) {\(q_0\)}; 
+        \node[state] (q_1) [right=of q_0] {\(q_1\)}; 
+        \node[state, accepting] [right=of q_1] (q_2) {\(q_2\)}; 
+
+        \path[->] (q_0) edge[loop above] node[above] {\(0,1\)} ()
+                    edge node[above] {\(0\)} (q_1) 
+                    (q_1) edge node[above] {\(1\)} (q_2); 
+    \end{tikzpicture}
+\end{center}Consider the string \(0101\). 
+Verify that there are three possible sequences of states that this machine can go through for this word:\[
+    q_0 \to q_0 \to q_0 \to q_0,~~q_0 \to q_0 \to q_1 \to q_2,~\text{and}~~q_1 \to q_2.
+\]Of these, only the second sequence both (1) terminates in a final state, and (2) consumes all the symbols in the string. 
+However, as we said, so long as \textit{one} of these sequences terminates, the NFA will accept the string. 
+
+Now consider the string \(100\). 
+We again have three possible sequences of states:\[
+    q_0 \to q_0 \to q_0, ~~q_0 \to q_0 \to q_1,~\text{and}~~q_0 \to q_1.
+\]Here, none of these fulfill our criteria for acceptance, so this string will be rejected by the NFA, as desired.\endex%
+
+The usefulness of NFAs in proving things about regular languages lies in the following theorem: 
+
+\begin{theorem}[Equivalence of NFAs and DFAs]\label{theo:equiv-nfa-dfa}
+    A language \(\lang \subseteq \Sigma^*\) recognized by an NFA \(\machine\) is a regular language, i.e., there exists a DFA \(\machine'\) that also recognizes \(\lang\), and does so with \(O(2^{|Q|})\) states, where \(Q\) is the set of states of \(\machine\). 
+\end{theorem}
+
+Before we prove this, let's look at an example. 
+The main idea behind constructing a DFA \(\machine'\) for an NFA \(\machine\) will be to make a state for each possible \textit{subset} of the states of the NFA.
+For instance, if there are states \(q_0\) and \(q_1\) in the NFA, there will be states \(\{q_0\}\), \(\{q_1\}\), and \(\{q_0, q_1\}\) in the DFA (and also one for \(\{\}\)). 
+Then, to form the transition function, we take the \textit{union} of the outcomes of the NFA's transition function (remember, it returns a set!) for each of the NFA states inside the DFA's states. 
+
+\exm{} Consider the following NFA:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double}]
+        
+        \node[state,initial] (q_0) {\(q_0\)}; 
+        \node[state,accepting] (q_1) [right=of q_0] {\(q_1\)}; 
+
+        \path[->] (q_0) edge [loop above] node {\(1\)} ()
+                edge node[above] {\(1\)} (q_1) 
+                (q_1) edge [loop above] node {\(0\)} (); 
+    \end{tikzpicture}
+\end{center} Let this NFA be \(\machine = \langle Q, \Sigma, \delta, q_0, F \rangle\). 
+We construct the states of the DFA \(\machine'\) piece by piece (except the transition function, which we save for last):\begin{enumerate}
+    \item the states of \(\machine'\) will be \(\mathcal{P(Q)}\); 
+    \item the alphabet \(\Sigma\) will remain the same; 
+    \item the starting state will be the set containing \(q_0\), so \(\{q_0\}\); 
+    \item the final states will be any subset of \(Q\) which contains a state from \(F\), so in this case, \(\{q_0, q_1\}\) and \(\{q_1\}\). 
+\end{enumerate} This gives us the following picture: 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},
+        baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(q_0\)}; 
+        \node[state,accepting] (q_1) [right=of q_0] {\(q_1\)}; 
+
+        \path[->] (q_0) edge [loop above] node {\(1\)} ()
+                edge node[above] {\(1\)} (q_1) 
+                (q_1) edge [loop above] node {\(0\)} (); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},baseline=(current bounding box.center)]
+        \path[dashed,->] (0,0) edge (1.5,0); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},
+        baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(\{q_0\}\)}; 
+        \node[state,accepting] (q_01) [right=of q_0] {\(\{q_0, q_1\}\)};
+        \node[state] (emp) at (1, -2) {\(\{\}\)}; 
+        \node[state,accepting] (q_1) [right=of emp] {\(\{q_1\}\)};
+    \end{tikzpicture}
+\end{center} I'll keep the old NFA off to the side so we can consult it while we construct our new machine. 
+
+Now we go about filling in the arrows between the states. 
+To do this, we simply start at \(\{q_0\}\) and make transitions ``as needed''. 
+Remember, our general strategy will be to take the union of all the possible outputs under \(\delta\) for each NFA state within the DFA states. 
+So for \(\{q_0\}\), its only member is, well, \(q_0\). 
+In the NFA, reading a \(1\) at \(q_0\) leads us either to \(q_0\) or \(q_1\), so we represent this by drawing the following arrow in our DFA:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},
+        baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(q_0\)}; 
+        \node[state,accepting] (q_1) [right=of q_0] {\(q_1\)}; 
+
+        \path[->] (q_0) edge [loop above] node {\(1\)} ()
+                edge node[above] {\(1\)} (q_1) 
+                (q_1) edge [loop above] node {\(0\)} (); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},baseline=(current bounding box.center)]
+        \path[dashed,->] (0,0) edge (1.5,0); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(\{q_0\}\)}; 
+        \node[state,accepting] (q_01) [right=of q_0] {\(\{q_0, q_1\}\)};
+        \node[state] (emp) at (1, -2) {\(\{\}\)}; 
+        \node[state,accepting] (q_1) [right=of emp] {\(\{q_1\}\)};
+
+        \path[->] (q_0) edge node[above] {\(1\)} (q_01); 
+    \end{tikzpicture}
+\end{center}Reading a \(0\) while at \(q_0\), on the other hand, doesn't have a corresponding transition! 
+We represent this by drawing a transition to the empty set state. 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},
+        baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(q_0\)}; 
+        \node[state,accepting] (q_1) [right=of q_0] {\(q_1\)}; 
+
+        \path[->] (q_0) edge [loop above] node {\(1\)} ()
+                edge node[above] {\(1\)} (q_1) 
+                (q_1) edge [loop above] node {\(0\)} (); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},baseline=(current bounding box.center)]
+        \path[dashed,->] (0,0) edge (1.5,0); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(\{q_0\}\)}; 
+        \node[state,accepting] (q_01) [right=of q_0] {\(\{q_0, q_1\}\)};
+        \node[state] (emp) at (1, -2) {\(\{\}\)}; 
+        \node[state,accepting] (q_1) [right=of emp] {\(\{q_1\}\)};
+
+        \path[->] (q_0) edge node[above] {\(1\)} (q_01) 
+                edge[bend right] node[right] {\(0\)} (emp); 
+    \end{tikzpicture}
+\end{center}
+Remember that we need to do this for all the symbols in \(\Sigma\) so that this new machine is deterministic. 
+Then, we just move on to the next state. 
+
+For \(\{q_0, q_1\}\), we have two states instead of just one, so what we're going to do is take the union of both \(\delta(q_0, a)\) and \(\delta (q_1, a)\) for each symbol \(a\) in the alphabet. 
+We already know that \(\delta(q_0,0) = \{\}\), and we have \(\delta(q_1,0) = \{q_1\}\). 
+Thus, to get the new transition from \(\{q_0, q_1\}\) with symbol \(0\), we take the union of \(\{\}\) and \(\{q_1\}\), which is just \(\{q_1\}\). 
+Likewise, we know that \(\delta(q_0, 1) = \{q_0, q_1\}\), and we have \(\delta(q_1, 1) = \{\}\), so our transition from \(\{q_0, q_1\}\) with symbol \(1\) will lead to \(\{\} \cup \{q_0, q_1\} = \{q_0, q_1\}\). 
+\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},
+        baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(q_0\)}; 
+        \node[state,accepting] (q_1) [right=of q_0] {\(q_1\)}; 
+
+        \path[->] (q_0) edge [loop above] node {\(1\)} ()
+                edge node[above] {\(1\)} (q_1) 
+                (q_1) edge [loop above] node {\(0\)} (); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},baseline=(current bounding box.center)]
+        \path[dashed,->] (0,0) edge (1.5,0); 
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(\{q_0\}\)}; 
+        \node[state,accepting] (q_01) [right=of q_0] {\(\{q_0, q_1\}\)};
+        \node[state] (emp) at (1, -2) {\(\{\}\)}; 
+        \node[state,accepting] (q_1) [right=of emp] {\(\{q_1\}\)};
+
+        \path[->] (q_0) edge node[above] {\(1\)} (q_01) 
+                edge[bend right] node[right] {\(0\)} (emp)
+                (q_01) edge[bend right] node[right] {\(0\)} (q_1) 
+                edge[loop right] node[right] {\(1\)} (); 
+    \end{tikzpicture}
+\end{center}
+Finally, I'll leave it as an exercise to see that we have the following transitions for \(\{q_1\}\): \[\{q_1\} \overset{0}{\to} \{q_1\}~~\text{and}~~\{q_1\} \overset{1}{\to} \{\}.\] 
+For the state containing the empty set, it's pretty intuitive to see that it will be a trap state, as there are no transitions in the original machine from the empty set, so there are likewise no possible transitions. 
+This gives us our final DFA:\begin{center}
+    \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,>={Stealth[round]},
+        every state/.style={draw=CornflowerBlue!70,fill=CornflowerBlue!20,very thick}, 
+        accepting/.style={draw=magenta!50,fill=magenta!20, very thick,double},baseline=(current bounding box.center)]
+        
+        \node[state,initial] (q_0) {\(\{q_0\}\)}; 
+        \node[state,accepting] (q_01) [right=of q_0] {\(\{q_0, q_1\}\)};
+        \node[state] (emp) at (1, -2) {\(\{\}\)}; 
+        \node[state,accepting] (q_1) [right=of emp] {\(\{q_1\}\)};
+
+        \path[->] (q_0) edge node[above] {\(1\)} (q_01) 
+                edge[bend right] node[right] {\(0\)} (emp)
+                (q_01) edge[bend right] node[right] {\(0\)} (q_1) 
+                edge[loop right] node[right] {\(1\)} ()
+                (q_1) edge[loop right] node[right] {\(0\)} ()
+                edge node[below] {\(1\)} (emp)
+                (emp) edge[loop below] node[below] {\(0,1\)} (); 
+    \end{tikzpicture}
+\end{center}
+One way we can check is to see if our construction is correct is to see if both machines compute the same language. 
+It's easy to see that the language of our original machine is \(\lang = \{1^m 0^n \mid m > 0, n\ge 0\}\), and a quick inspection shows that the DFA computes the same language. 
+\endex%
+
+To prove Theorem~\ref{theo:equiv-nfa-dfa} we just have to generalize this argument to any arbitrary NFA, and show that the language that the new DFA computes is the same language as the original NFA. 
+
+\begin{proof}
+    %TO-DO
+\end{proof}
+
 \section{Regular expressions}\label{sec:regex}
+
+Now, we switch gears to something entirely different. 
+This whole time, we've been using semantics to define the regular languages. 
+That is to say, we've been looking at DFAs and the process of computation itself in order to delineate which languages are regular and which languages aren't. 
+We've also been using DFAs to study and understand regular languages. 
+But what if we never had to look ``under the hood''---what if we had a characterization of the regular languages that never even referred to a DFA? 
+
+This is precisely what the \emph{regular expressions} are for. 
+They are a machine independent way of defining the regular languages. 
+Think of the DFA as the underlying processor of your computer, and the regular expressions as a programming language. 
+We \textit{could} talk about all we need to do with a computer entirely in terms of the inner workings of the processor, and all the voltage changes that happen in order to compute something, but we don't, because that would be ridiculous. 
+Instead, we abstract away the unimportant details, and try to find away to identify what really matters in terms of the computation we're dealing with---which is precisely what we do when we write in programming languages. 
+
+
+\section{The pumping lemma} 
+
+There's a certain characteristic of DFAs that we've been using without really realizing how important it is. 
+Consider any ``meaningful'' regular language (meaningful in the sense that it isn't just a finite list of strings). 
+A lot of the languages we've been dealing with have had an infinite amount of possible strings. 
+Even if the strings themselves have finite length, there's infinitely many of them to accept---sometimes several for every natural number---but our DFAs only have finitely many states. 
+If we think about it, this is because our DFAs often have \textit{loops} that keep them stuck in the same few states. 
+
+We often refer to the process of repeating \(v\) as ``pumping'' it, hence the name of the following theorem. 
+\begin{theorem}[Pumping lemma for regular languages]
+    For every regular language \(\lang\), there exists a positive integer \(n\) for which every string \(z\in\lang\), with \(|z| \ge n\) can be broken up into \(z = uvw\), where\vspace{-10pt}\begin{enumerate}\renewcommand{\labelenumi}{\colorbox{Periwinkle!20}{\textbf{\arabic{enumi}}}}
+        \item \(|uv| \le n\); 
+        \item \(|v| > 1\); and 
+        \item for every integer \(i \ge 0\), \(z' = u v^i w\) is still a member of \(\lang\). 
+    \end{enumerate}
+\end{theorem}
